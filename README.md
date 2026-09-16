@@ -1,3 +1,3 @@
 # establishedbefore.com
 
-Site only — source of record is `cjhorn95/est-before` (private). This repo holds nothing but the published landing page.
+Site only; rebuild instructions in RUNBOOK.md. This repo holds nothing but the published landing page.

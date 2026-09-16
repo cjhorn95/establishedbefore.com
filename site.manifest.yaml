@@ -1,0 +1,100 @@
+# site.manifest.yaml — machine-readable twin of RUNBOOK.md for establishedbefore.com
+# Public file: no secrets, no private emails, no business documents. Facts only.
+# Shape follows the fleet A2A conventions (myvps/protocol/SPEC.md): provider block,
+# content-derived version, extension URI, verification as executable checks.
+schema: urn:fleet:site-manifest:v1
+version: "2026-09-16.sha256:b372c9f50542"   # <date>.sha256:<first 12 hex of index.html>; same form as the agent cards; bump on every page change
+provider:
+  organization: "Ridgeline Valuation Corp — agent fleet"
+  url: https://github.com/cjhorn95/myvps
+documentationUrl: https://github.com/cjhorn95/establishedbefore.com/blob/main/RUNBOOK.md
+verificationRunsOn: linux                 # dig/curl/sha256sum; do not run these from PowerShell
+
+site:
+  name: The Established Before Co.
+  url: https://establishedbefore.com/
+  kind: static-landing
+  cta:
+    - label: Shop
+      url: https://www.etsy.com/shop/EstablishedBefore
+
+hosting:
+  provider: github-pages
+  repo: cjhorn95/establishedbefore.com
+  visibility: public
+  branch: main
+  path: /
+  fallbackUrl: https://cjhorn95.github.io/establishedbefore.com/
+  customDomain: establishedbefore.com
+  httpsEnforced: true
+  files:
+    - index.html
+    - og.png
+    - CNAME
+    - .nojekyll
+    - README.md
+    - RUNBOOK.md
+    - site.manifest.yaml
+
+sourceOfRecord:                           # this repo IS the canonical copy of the published page
+  repo: cjhorn95/establishedbefore.com
+  branch: main
+  path: index.html
+  sha256: b372c9f505421f0ad340e41fca373e159ec3118574ebdb99a7c9e2b0eb4fb34e
+  bytes: 87092
+  assets:
+    - path: og.png
+      bytes: 514405
+      dimensions: 1200x630
+      servedAs: https://establishedbefore.com/og.png
+  upstreamDesignSource: "see private register"   # upstream design-history pointer lives in the fleet registry, not here
+
+dns:
+  registrar: godaddy
+  nameservers: [ns47.domaincontrol.com, ns48.domaincontrol.com]
+  zone: establishedbefore.com
+  records:
+    - {type: A, host: "@", value: 185.199.108.153, ttl: 600}
+    - {type: A, host: "@", value: 185.199.109.153, ttl: 600}
+    - {type: A, host: "@", value: 185.199.110.153, ttl: 600}
+    - {type: A, host: "@", value: 185.199.111.153, ttl: 600}
+    - {type: CNAME, host: www, value: cjhorn95.github.io, ttl: 600}
+  untouched: [MX, TXT, NS, SOA]          # mail (Google Workspace) lives on this zone; never edit from the site lane
+  removeIfPresent:
+    - {type: A, host: "@", value: 3.33.130.190, note: godaddy-parking}
+    - {type: A, host: "@", value: 15.197.148.33, note: godaddy-parking}
+    - {type: CNAME, host: www, value: establishedbefore.com, note: parking-era}
+  forwarding:
+    - {domain: establishedbefore.co,   to: https://establishedbefore.com, code: 301, masking: false}
+    - {domain: establishedbefore.shop, to: https://establishedbefore.com, code: 301, masking: false}
+
+access:                                   # roles only; credentials live in the operator's vault
+  accountRegister: MemoryVault/Projects/_agents/gus/AI-SUBSCRIPTIONS-REGISTER.md   # private, fleet-internal; account per role
+  github: {surface: gh-cli, account: cjhorn95, lane: github-repo}
+  dns: {surface: godaddy, method: google-sso, lane: dns-custody}
+  design: {surface: private fleet design repo, lane: design, signOff: venture-owner}
+  publish: {gate: operator-approval-per-change, default: not-published}
+
+verification:                             # match: contains (default) | equals | regex
+  - {name: apex-a-108, run: "dig +short A establishedbefore.com @8.8.8.8", expect: "185.199.108.153", match: contains}
+  - {name: apex-a-109, run: "dig +short A establishedbefore.com @8.8.8.8", expect: "185.199.109.153", match: contains}
+  - {name: apex-a-110, run: "dig +short A establishedbefore.com @8.8.8.8", expect: "185.199.110.153", match: contains}
+  - {name: apex-a-111, run: "dig +short A establishedbefore.com @8.8.8.8", expect: "185.199.111.153", match: contains}
+  - {name: www-cname, run: "dig +short CNAME www.establishedbefore.com @8.8.8.8", expect: "cjhorn95.github.io.", match: equals}
+  - {name: https-200, run: "curl -sI https://establishedbefore.com/ | head -1", expect: " 200", match: contains}
+  - {name: http-redirect, run: "curl -sI http://establishedbefore.com/ | head -1", expect: " 301", match: contains}
+  - {name: page-sha256, run: "curl -s https://establishedbefore.com/ | sha256sum | cut -c1-64", expect: "b372c9f505421f0ad340e41fca373e159ec3118574ebdb99a7c9e2b0eb4fb34e", match: equals}
+  - {name: og-image, run: "curl -sI https://establishedbefore.com/og.png | head -1", expect: " 200", match: contains}
+  - {name: co-forward, run: "curl -sI https://establishedbefore.co/ | grep -i '^location'", expect: "https://establishedbefore.com", match: contains}
+  - {name: shop-forward, run: "curl -sI https://establishedbefore.shop/ | grep -i '^location'", expect: "https://establishedbefore.com", match: contains}
+  - {name: pages-https-enforced, run: "gh api repos/cjhorn95/establishedbefore.com/pages --jq .https_enforced", expect: "true", match: equals}
+
+rebuild:
+  runbook: RUNBOOK.md
+  steps: [repo, pages, dns, https, verify]
+
+history:
+  - {date: 2026-09-16, event: "repo created; seeded with the interim landing page; Pages enabled main:/"}
+  - {date: 2026-09-16, event: "page replaced with the approved chalkboard version (commit 1914629)"}
+  - {date: 2026-09-16, event: "DNS cut over to GitHub Pages; .co/.shop 301 forwarding; HTTPS enforced on cert"}
+  - {date: 2026-09-16, event: "custom domain re-asserted via Pages API to force cert (GitHub commits 12b73fa/4880907 touch CNAME only); cert issued 22:47Z; httpsEnforced true"}
